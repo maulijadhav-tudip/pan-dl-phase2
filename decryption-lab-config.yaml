@@ -1,0 +1,22 @@
+imports:
+- path: decryption-lab-setup.py
+
+outputs:
+- name: Guacamole-URL
+  value: $(ref.resource-creation-template.Guacamole-PublicIP-Address)
+- name: Guacamole-Credentials
+  value: 'guacadmin/guacadmin'    
+- name: PANWFirewall-PublicIP-Address
+  value: $(ref.resource-creation-template.PANFirewall-PublicIP-Address)
+  
+- name: OwnCloud-URL
+  value: $(ref.resource-creation-template.OwnCloud-Internal-IP-Address)
+- name: OwnCloud-Credentials
+  value: 'user/cEUAjb9gfnsL'      
+- name: Notes
+  value: 'Please note that it can take about 20 - 30 mins for the above VMs to complete its bootup and installation. If the IP addresses are not responding to your request, please give it more time to complete it setup and try it later.'
+
+
+resources:
+- name: resource-creation-template
+  type: decryption-lab-setup.py
