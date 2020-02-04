@@ -70,7 +70,8 @@ desktop_interface_ip = '10.5.3.4'
 
 # Servers
 owncloud_server_static_internal_ip = '10.5.2.5'
-
+guac_primary_static_internal_ip = '10.5.0.5' # mgmt_network
+guac_secondary_static_internal_ip = '10.5.1.3' # public_network
 
 # Desktop interfaces configuration
 desktop_static_primary_internal_ip = '10.5.3.5' # desktop_network
@@ -124,19 +125,11 @@ def GenerateConfig(context):
                 'networkInterfaces': [
                     {
                         'network': '$(ref.' + mgmt_network + '.selfLink)',
-                        'accessConfigs': [{
-                            'name': 'MGMT Access',
-                            'type': 'ONE_TO_ONE_NAT'
-                        }],
                         'subnetwork': '$(ref.' + mgmt_subnet + '.selfLink)',
                         'networkIP': managemet_interface_ip,
                     },
                     {
                         'network': '$(ref.' + public_network + '.selfLink)',
-                        'accessConfigs': [{
-                            'name': 'External access',
-                            'type': 'ONE_TO_ONE_NAT'
-                        }],
                         'subnetwork': '$(ref.' + public_subnet + '.selfLink)',
                         'networkIP': public_interface_ip,
                     },
@@ -278,13 +271,20 @@ def GenerateConfig(context):
                     ]}
                 ],
                 'networkInterfaces': [{
-                        'network': '$(ref.' + public_network + '.selfLink)',
+                        'network': '$(ref.' + mgmt_network + '.selfLink)',
                         'accessConfigs': [{
-                            'name': 'External access',
+                            'name': 'MGMT Access',
                             'type': 'ONE_TO_ONE_NAT'
                         }],
-                        'subnetwork': '$(ref.' + public_subnet + '.selfLink)',
-                    }]
+                        'subnetwork': '$(ref.' + mgmt_subnet + '.selfLink)',
+                        'networkIP': guac_primary_static_internal_ip,
+                    },
+                    {
+                    'network': '$(ref.' + public_network + '.selfLink)',
+                    'subnetwork': '$(ref.' + public_subnet + '.selfLink)',
+                    'networkIP': guac_secondary_static_internal_ip
+                    }
+                    ]
             }
         },
         {
@@ -367,7 +367,7 @@ def GenerateConfig(context):
                 'sourceRanges': ['0.0.0.0/0'],
                 'allowed': [{
                     'IPProtocol': 'tcp',
-                    'ports': [22, 443]
+                    'ports': [22, 443, 8080]
                 }]
             }
         },
@@ -385,7 +385,7 @@ def GenerateConfig(context):
                 'sourceRanges': ['0.0.0.0/0'],
                 'allowed': [{
                     'IPProtocol': 'tcp',
-                    'ports': [221, 3389, 8080]
+                    'ports': [221, 3389]
                 }]
             }
         },
@@ -461,9 +461,8 @@ def GenerateConfig(context):
     ]
     outputs.append({'name': 'Guacamole-PublicIP-Address',
                     'value': 'http://' + '$(ref.' + guacamole_instance + '.networkInterfaces[0].accessConfigs[0].natIP)' + ':8080/guacamole'})
-    outputs.append({'name': 'PANFirewall-PublicIP-Address',
-                    'value': '$(ref.' + ngfw_instance + '.networkInterfaces[0].accessConfigs[0].natIP)'})
+    outputs.append({'name': 'PANFirewall-Internal-IP-Address',
+                    'value': '$(ref.' + ngfw_instance + '.networkInterfaces[0].networkIP)'})
     outputs.append({'name': 'OwnCloud-Internal-IP-Address',
                     'value': 'http://' + '$(ref.' + owncloud_instance + '.networkInterfaces[0].networkIP)'})
-
     return {'resources': resources, 'outputs': outputs}
