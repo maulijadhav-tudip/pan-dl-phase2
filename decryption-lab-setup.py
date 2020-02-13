@@ -255,7 +255,7 @@ def GenerateConfig(context):
                     'items': [{
                         'key': 'startup-script',
                         'value': "".join(["#!/bin/bash\n",
-                                          "sudo sed -i 's/34.82.191.82/10.5.2.5/g' /var/www/owncloud/config/config.php\n"
+                                          "echo 'startup-script'\n"
                                           ])},
                         {'key': 'ssh-keys', 'value': sshkey},
                         {'key': 'serial-port-enable', 'value': '1'}]
