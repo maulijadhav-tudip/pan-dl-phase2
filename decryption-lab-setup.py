@@ -41,22 +41,22 @@ mgmt_network = "mgmt-network" + randnum
 mgmt_subnet = "mgmt-subnet" + randnum
 public_network = "public-network" + randnum
 public_subnet = "public-subnet" + randnum
-owncloud_network = "web-network" + randnum
-owncloud_subnet = "web-subnet" + randnum
-desktop_network = "db-network" + randnum
-desktop_subnet = "db-subnet" + randnum
+owncloud_network = "trust2-network" + randnum
+owncloud_subnet = "trust2-subnet" + randnum
+desktop_network = "trust1-network" + randnum
+desktop_subnet = "trust1-subnet" + randnum
 
 
 # Firewall-Rules
-owncloud_firewall = "web-firewall" + randnum
-desktop_firewall = "db-firewall" + randnum
+owncloud_firewall = "trust1-firewall" + randnum
+desktop_firewall = "trust2-firewall" + randnum
 mgmt_firewall = "mgmt-firewall" + randnum
 public_firewall = "public-firewall" + randnum
 
 
 # Routes
-owncloud_route = "web-route" + randnum
-desktop_route = "db-route" + randnum
+owncloud_route = "trust2-route" + randnum
+desktop_route = "trust1-route" + randnum
 
 
 # Internal Static IP Configuration
