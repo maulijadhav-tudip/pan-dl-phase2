@@ -3,8 +3,7 @@ from random import randint
 
 randnum = str(randint(100, 999))
 
-# Rev: Decryption Lab-1.0.1
-# Changes: Include Owncloud and Desktop VM scripts in python file.
+# Rev: Decryption Lab-1.0.3
 
 
 # ssh_key and service_account
@@ -41,22 +40,22 @@ mgmt_network = "mgmt-network" + randnum
 mgmt_subnet = "mgmt-subnet" + randnum
 public_network = "public-network" + randnum
 public_subnet = "public-subnet" + randnum
-owncloud_network = "trust2-network" + randnum
-owncloud_subnet = "trust2-subnet" + randnum
-desktop_network = "trust1-network" + randnum
-desktop_subnet = "trust1-subnet" + randnum
+trust2_network = "trust2-network" + randnum
+trust2_subnet = "trust2-subnet" + randnum
+trust1_network = "trust1-network" + randnum
+trust1_subnet = "trust1-subnet" + randnum
 
 
 # Firewall-Rules
-owncloud_firewall = "trust1-firewall" + randnum
-desktop_firewall = "trust2-firewall" + randnum
+trust2_firewall = "trust2-firewall" + randnum
+trust1_firewall = "trust1-firewall" + randnum
 mgmt_firewall = "mgmt-firewall" + randnum
 public_firewall = "public-firewall" + randnum
 
 
 # Routes
-owncloud_route = "trust2-route" + randnum
-desktop_route = "trust1-route" + randnum
+trust2_route = "trust2-route" + randnum
+trust1_route = "trust1-route" + randnum
 
 
 # Internal Static IP Configuration
@@ -64,10 +63,8 @@ desktop_route = "trust1-route" + randnum
 # PAN firewall Interfaces
 managemet_interface_ip = '10.5.1.4'
 public_interface_ip = '10.5.0.4'
-owncloud_interface_ip = '10.5.3.4'  # trust 2
-desktop_interface_ip = '10.5.2.4' # trust 1
-# trust_2_interface_ip = '10.5.3.4'  # trust 2
-# trust_1_interface_ip = '10.5.2.4' # trust 1
+trust2_interface_ip = '10.5.3.4'  # trust 2
+trust1_interface_ip = '10.5.2.4' # trust 1
 
 
 # Make fourth octet consistent
@@ -88,11 +85,10 @@ desktop_static_secondary_internal_ip = '10.5.0.10'  # public network
 
 # Subnets
 mgmt_subnet_ip = '10.5.1.0/24'
-owncloud_subnet_ip = '10.5.3.0/24' # public net for owncloud
-# (Trust 2)
+trust2_subnet_ip = '10.5.3.0/24'
 
 public_subnet_ip = '10.5.0.0/24'
-desktop_subnet_ip = '10.5.2.0/24'
+trust1_subnet_ip = '10.5.2.0/24'
 
 
 COMPUTE_URL_BASE = 'https://www.googleapis.com/compute/v1/'
@@ -135,6 +131,10 @@ def GenerateConfig(context):
                 'networkInterfaces': [
                     {
                         'network': '$(ref.' + mgmt_network + '.selfLink)',
+                        'accessConfigs': [{
+                            'name': 'MGMT Access',
+                            'type': 'ONE_TO_ONE_NAT'
+                        }],
                         'subnetwork': '$(ref.' + mgmt_subnet + '.selfLink)',
                         'networkIP': managemet_interface_ip,
                     },
@@ -144,14 +144,14 @@ def GenerateConfig(context):
                         'networkIP': public_interface_ip,
                     },
                     {
-                        'network': '$(ref.' + owncloud_network + '.selfLink)',
-                        'subnetwork': '$(ref.' + owncloud_subnet + '.selfLink)',
-                        'networkIP': owncloud_interface_ip,
+                        'network': '$(ref.' + trust2_network + '.selfLink)',
+                        'subnetwork': '$(ref.' + trust2_subnet + '.selfLink)',
+                        'networkIP': trust2_interface_ip,
                     },
                     {
-                        'network': '$(ref.' + desktop_network + '.selfLink)',
-                        'subnetwork': '$(ref.' + desktop_subnet + '.selfLink)',
-                        'networkIP': desktop_interface_ip,
+                        'network': '$(ref.' + trust1_network + '.selfLink)',
+                        'subnetwork': '$(ref.' + trust1_subnet + '.selfLink)',
+                        'networkIP': trust1_interface_ip,
                     }
                 ]
             }
@@ -188,8 +188,8 @@ def GenerateConfig(context):
                     ]}
                 ],
                 'networkInterfaces': [{
-                    'network': '$(ref.' + desktop_network + '.selfLink)',
-                    'subnetwork': '$(ref.' + desktop_subnet + '.selfLink)',
+                    'network': '$(ref.' + trust1_network + '.selfLink)',
+                    'subnetwork': '$(ref.' + trust1_subnet + '.selfLink)',
                     'networkIP': desktop_static_primary_internal_ip
                     },
                     {
@@ -298,19 +298,19 @@ def GenerateConfig(context):
             }
         },
         {
-            'name': owncloud_network,
+            'name': trust2_network,
             'type': 'compute.v1.network',
             'properties': {
                 'autoCreateSubnetworks': False,
             }
         },
         {
-            'name': owncloud_subnet,
+            'name': trust2_subnet,
             'type': 'compute.v1.subnetwork',
             'properties': {
-                'ipCidrRange': owncloud_subnet_ip,
+                'ipCidrRange': trust2_subnet_ip,
                 'region': region,
-                'network': '$(ref.' + owncloud_network + '.selfLink)',
+                'network': '$(ref.' + trust2_network + '.selfLink)',
             }
         },
         {
@@ -347,7 +347,7 @@ def GenerateConfig(context):
         },
 
         {
-            'name': desktop_network,
+            'name': trust1_network,
             'type': 'compute.v1.network',
             'properties': {
                 'autoCreateSubnetworks': False,
@@ -355,17 +355,17 @@ def GenerateConfig(context):
             }
         },
         {
-            'name': desktop_subnet,
+            'name': trust1_subnet,
             'type': 'compute.v1.subnetwork',
             'properties': {
-                'ipCidrRange': desktop_subnet_ip,
+                'ipCidrRange': trust1_subnet_ip,
                 'region': region,
-                'network': '$(ref.' + desktop_network + '.selfLink)',
+                'network': '$(ref.' + trust1_network + '.selfLink)',
             }
         },
         {
             'metadata': {
-                'dependsOn': [mgmt_network, desktop_network, owncloud_network, public_network]
+                'dependsOn': [mgmt_network, trust1_network, trust2_network, public_network]
             },
             'name': mgmt_firewall,
             'type': 'compute.v1.firewall',
@@ -383,7 +383,7 @@ def GenerateConfig(context):
         },
         {
             'metadata': {
-                'dependsOn': [mgmt_network, desktop_network, owncloud_network, public_network]
+                'dependsOn': [mgmt_network, trust1_network, trust2_network, public_network]
             },
             'name': public_firewall,
             'type': 'compute.v1.firewall',
@@ -395,19 +395,19 @@ def GenerateConfig(context):
                 'sourceRanges': ['0.0.0.0/0'],
                 'allowed': [{
                     'IPProtocol': 'tcp',
-                    'ports': [221, 3389]
+                    'ports': [22, 3389, 443]
                 }]
             }
         },
         {
             'metadata': {
-                'dependsOn': [mgmt_network, desktop_network, owncloud_network, public_network]
+                'dependsOn': [mgmt_network, trust1_network, trust2_network, public_network]
             },
-            'name': owncloud_firewall,
+            'name': trust2_firewall,
             'type': 'compute.v1.firewall',
             'properties': {
                 'region': region,
-                'network': '$(ref.' + owncloud_network + '.selfLink)',
+                'network': '$(ref.' + trust2_network + '.selfLink)',
                 'direction': 'INGRESS',
                 'priority': 1000,
                 'sourceRanges': ['0.0.0.0/0'],
@@ -422,13 +422,13 @@ def GenerateConfig(context):
         },
         {
             'metadata': {
-                'dependsOn': [mgmt_network, desktop_network, owncloud_network, public_network]
+                'dependsOn': [mgmt_network, trust1_network, trust2_network, public_network]
             },
-            'name': desktop_firewall,
+            'name': trust1_firewall,
             'type': 'compute.v1.firewall',
             'properties': {
                 'region': region,
-                'network': '$(ref.' + desktop_network + '.selfLink)',
+                'network': '$(ref.' + trust1_network + '.selfLink)',
                 'direction': 'INGRESS',
                 'priority': 1000,
                 'sourceRanges': ['0.0.0.0/0'],
@@ -443,26 +443,26 @@ def GenerateConfig(context):
         },
         {
             'metadata': {
-                'dependsOn': [mgmt_network, desktop_network, owncloud_network, public_network]
+                'dependsOn': [mgmt_network, trust1_network, trust2_network, public_network]
             },
-            'name': owncloud_route,
+            'name': trust2_route,
             'type': 'compute.v1.route',
             'properties': {
                 'priority': 100,
-                'network': '$(ref.' + owncloud_network + '.selfLink)',
+                'network': '$(ref.' + trust2_network + '.selfLink)',
                 'destRange': '0.0.0.0/0',
                 'nextHopIp': '$(ref.' + ngfw_instance + '.networkInterfaces[2].networkIP)'
             }
         },
         {
             'metadata': {
-                'dependsOn': [mgmt_network, desktop_network, owncloud_network, public_network]
+                'dependsOn': [mgmt_network, trust1_network, trust2_network, public_network]
             },
-            'name': desktop_route,
+            'name': trust1_route,
             'type': 'compute.v1.route',
             'properties': {
                 'priority': 100,
-                'network': '$(ref.' + desktop_network + '.selfLink)',
+                'network': '$(ref.' + trust1_network + '.selfLink)',
                 'destRange': '0.0.0.0/0',
                 'nextHopIp': '$(ref.' + ngfw_instance + '.networkInterfaces[3].networkIP)'
             }
