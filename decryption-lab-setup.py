@@ -62,26 +62,37 @@ desktop_route = "db-route" + randnum
 # Internal Static IP Configuration
 
 # PAN firewall Interfaces
-managemet_interface_ip = '10.5.0.4'
-public_interface_ip = '10.5.1.4'
-owncloud_interface_ip = '10.5.2.4'
-desktop_interface_ip = '10.5.3.4'
+managemet_interface_ip = '10.5.1.4'
+public_interface_ip = '10.5.0.4'
+owncloud_interface_ip = '10.5.3.4'  # trust 2
+desktop_interface_ip = '10.5.2.4' # trust 1
+# trust_2_interface_ip = '10.5.3.4'  # trust 2
+# trust_1_interface_ip = '10.5.2.4' # trust 1
 
+
+# Make fourth octet consistent
+# Owncloud primary interface - public
 
 # Servers
-owncloud_server_static_internal_ip = '10.5.2.5'
+# Guacamole interfaces configuration (Mgmt and Public Network)
+guac_primary_static_internal_ip = '10.5.1.5'  # mgmt_network
+guac_secondary_static_internal_ip = '10.5.0.5'  # public_network
 
+# Desktop interfaces configuration (Public Network)
+owncloud_server_static_internal_ip = '10.5.0.15'  # public_network
 
-# Desktop interfaces configuration
-desktop_static_primary_internal_ip = '10.5.3.5' # desktop_network
-desktop_static_secondary_internal_ip = '10.5.1.5' # public network
+# Desktop interfaces configuration (Trust 1 and Public Network)
+desktop_static_primary_internal_ip = '10.5.2.10'  # trust_1_network
+desktop_static_secondary_internal_ip = '10.5.0.10'  # public network
 
 
 # Subnets
-mgmt_subnet_ip = '10.5.0.0/24'
-owncloud_subnet_ip = '10.5.2.0/24'
-public_subnet_ip = '10.5.1.0/24'
-desktop_subnet_ip = '10.5.3.0/24'
+mgmt_subnet_ip = '10.5.1.0/24'
+owncloud_subnet_ip = '10.5.3.0/24' # public net for owncloud
+# (Trust 2)
+
+public_subnet_ip = '10.5.0.0/24'
+desktop_subnet_ip = '10.5.2.0/24'
 
 
 COMPUTE_URL_BASE = 'https://www.googleapis.com/compute/v1/'
@@ -124,19 +135,11 @@ def GenerateConfig(context):
                 'networkInterfaces': [
                     {
                         'network': '$(ref.' + mgmt_network + '.selfLink)',
-                        'accessConfigs': [{
-                            'name': 'MGMT Access',
-                            'type': 'ONE_TO_ONE_NAT'
-                        }],
                         'subnetwork': '$(ref.' + mgmt_subnet + '.selfLink)',
                         'networkIP': managemet_interface_ip,
                     },
                     {
                         'network': '$(ref.' + public_network + '.selfLink)',
-                        'accessConfigs': [{
-                            'name': 'External access',
-                            'type': 'ONE_TO_ONE_NAT'
-                        }],
                         'subnetwork': '$(ref.' + public_subnet + '.selfLink)',
                         'networkIP': public_interface_ip,
                     },
@@ -234,8 +237,8 @@ def GenerateConfig(context):
                     ]}
                 ],
                 'networkInterfaces': [{
-                    'network': '$(ref.' + owncloud_network + '.selfLink)',
-                    'subnetwork': '$(ref.' + owncloud_subnet + '.selfLink)',
+                    'network': '$(ref.' + public_network + '.selfLink)',
+                    'subnetwork': '$(ref.' + public_subnet + '.selfLink)',
                     'networkIP': owncloud_server_static_internal_ip
                 }]
             }
@@ -262,7 +265,7 @@ def GenerateConfig(context):
                     'items': [{
                         'key': 'startup-script',
                         'value': "".join(["#!/bin/bash\n",
-                                          "sudo sed -i 's/34.82.191.82/10.5.2.5/g' /var/www/owncloud/config/config.php\n"
+                                          "echo 'startup-script'\n"
                                           ])},
                         {'key': 'ssh-keys', 'value': sshkey},
                         {'key': 'serial-port-enable', 'value': '1'}]
@@ -278,13 +281,20 @@ def GenerateConfig(context):
                     ]}
                 ],
                 'networkInterfaces': [{
-                        'network': '$(ref.' + public_network + '.selfLink)',
+                        'network': '$(ref.' + mgmt_network + '.selfLink)',
                         'accessConfigs': [{
-                            'name': 'External access',
+                            'name': 'MGMT Access',
                             'type': 'ONE_TO_ONE_NAT'
                         }],
-                        'subnetwork': '$(ref.' + public_subnet + '.selfLink)',
-                    }]
+                        'subnetwork': '$(ref.' + mgmt_subnet + '.selfLink)',
+                        'networkIP': guac_primary_static_internal_ip,
+                    },
+                    {
+                    'network': '$(ref.' + public_network + '.selfLink)',
+                    'subnetwork': '$(ref.' + public_subnet + '.selfLink)',
+                    'networkIP': guac_secondary_static_internal_ip
+                    }
+                    ]
             }
         },
         {
@@ -367,7 +377,7 @@ def GenerateConfig(context):
                 'sourceRanges': ['0.0.0.0/0'],
                 'allowed': [{
                     'IPProtocol': 'tcp',
-                    'ports': [22, 443]
+                    'ports': [22, 443, 8080]
                 }]
             }
         },
@@ -385,7 +395,7 @@ def GenerateConfig(context):
                 'sourceRanges': ['0.0.0.0/0'],
                 'allowed': [{
                     'IPProtocol': 'tcp',
-                    'ports': [221, 3389, 8080]
+                    'ports': [221, 3389]
                 }]
             }
         },
@@ -461,9 +471,8 @@ def GenerateConfig(context):
     ]
     outputs.append({'name': 'Guacamole-PublicIP-Address',
                     'value': 'http://' + '$(ref.' + guacamole_instance + '.networkInterfaces[0].accessConfigs[0].natIP)' + ':8080/guacamole'})
-    outputs.append({'name': 'PANFirewall-PublicIP-Address',
-                    'value': '$(ref.' + ngfw_instance + '.networkInterfaces[0].accessConfigs[0].natIP)'})
+    outputs.append({'name': 'PANFirewall-Internal-IP-Address',
+                    'value': '$(ref.' + ngfw_instance + '.networkInterfaces[0].networkIP)'})
     outputs.append({'name': 'OwnCloud-Internal-IP-Address',
                     'value': 'http://' + '$(ref.' + owncloud_instance + '.networkInterfaces[0].networkIP)'})
-
     return {'resources': resources, 'outputs': outputs}
