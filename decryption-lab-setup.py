@@ -32,7 +32,7 @@ guacamole_instance = "guacamole" + randnum
 pan_ngfw_image = "projects/panw-utd-public-cloud/global/images/pan-vm-series-ngfw901"
 owncloud_image = "projects/decryption-lab-dev/global/images/owncloud-final"
 windows_desktop_image = "projects/decryption-lab-dev/global/images/desktop-final"
-guacamole_server_image = "projects/decryption-lab-dev/global/images/guacamol-final"
+guacamole_server_image = "projects/decryption-lab-dev/global/images/guacamole-phase2-stage2"
 
 
 # Custom VPCs and Subnets
