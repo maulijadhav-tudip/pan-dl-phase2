@@ -3,17 +3,19 @@ from random import randint
 
 randnum = str(randint(100, 999))
 
-# Rev: Decryption Lab-1.0.1
-# Changes: Include Owncloud and Desktop VM scripts in python file.
-
+# Description: This template deploy the VM-Series firewall private image and other necessary resources to practice the decryption workshop
+# Author: Palo Alto Networks (RD Singh)
+# Template version: 1.0
+# Date Modified: 2020-04-20
+# Updated windows_desktop_image from windows-desktop-20200413 to windows-desktop-20200420
 
 # ssh_key and service_account
 sshkey = "gcp_palo_alto:ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDBt3SswQU9rLucn3j7K9/+tyfPNZlOUGPEsne8etv4GWIIEy0wJxbj1io+bvg3IVovnCFiQSrEhHk2hijK6oLJg8fd2QH6dHWNuhrpxk7dt5QPiRqjFG5eQD93tl3G7ihXIV8yGo7ytdEkKTR6Tnh4v4iI2rfC21rSwjHCNhSWEKNy+kN/V+S/5EhBbz4yiaPxiYwr95oMNOM9cU0xN7CgvT2BOdkwr3sp0mBy49Cjp/yD/CckLU52sZ4vve1HsIUsTy3YSnnxLFHuI8PPc0k8IHnfL7MMcSIpUg1zyDhIHhaaryuachqspygkmm99ZhKfpHz7/RyNMW5Ne97qGyL/ gcp_palo_alto"
 serviceaccount = "default"
 
 # Locations
-zone = "us-west1-b"
-region = "us-west1"
+zone = "us-central1-b"
+region = "us-central1"
 
 # Machine Types
 ngfw_machine_type = "n1-standard-4"
@@ -23,65 +25,61 @@ guacamole_machine_type = "n1-standard-2"
 
 
 # Instance Names
-ngfw_instance = "panw-fw" + randnum
+vmseries_ngfw_instance = "vmseries-ngfw" + randnum
 owncloud_instance = "owncloud" + randnum
-windows_instance = "desktop" + randnum
+windows_instance = "windows-desktop" + randnum
 guacamole_instance = "guacamole" + randnum
 
 
 # Source Images
-pan_ngfw_image = "projects/panw-utd-public-cloud/global/images/pan-vm-series-ngfw901"
-owncloud_image = "projects/decryption-lab-dev/global/images/owncloud-final"
-windows_desktop_image = "projects/decryption-lab-dev/global/images/desktop-final"
-guacamole_server_image = "projects/decryption-lab-dev/global/images/guacamol-final"
-
+vmseries_ngfw_image = "projects/decryption-lab-dev/global/images/vmseries-ngfw-v91-20200413"
+owncloud_image = "projects/decryption-lab-dev/global/images/owncloud-image-20200413"
+windows_desktop_image = "projects/decryption-lab-dev/global/images/windows-desktop-20200420"
+guacamole_server_image = "projects/decryption-lab-dev/global/images/guacamole-image-202004013"
 
 # Custom VPCs and Subnets
 mgmt_network = "mgmt-network" + randnum
 mgmt_subnet = "mgmt-subnet" + randnum
 public_network = "public-network" + randnum
 public_subnet = "public-subnet" + randnum
-owncloud_network = "web-network" + randnum
-owncloud_subnet = "web-subnet" + randnum
-desktop_network = "db-network" + randnum
-desktop_subnet = "db-subnet" + randnum
-
+untrust_network = "untrust-network" + randnum
+untrust_subnet = "untrust-subnet" + randnum
+trust_network = "trust-network" + randnum
+trust_subnet = "trust-subnet" + randnum
 
 # Firewall-Rules
-owncloud_firewall = "web-firewall" + randnum
-desktop_firewall = "db-firewall" + randnum
 mgmt_firewall = "mgmt-firewall" + randnum
 public_firewall = "public-firewall" + randnum
-
+untrust_firewall = "untrust-firewall" + randnum
+trust_firewall = "trust-firewall" + randnum
 
 # Routes
-owncloud_route = "web-route" + randnum
-desktop_route = "db-route" + randnum
-
-
-# Internal Static IP Configuration
-
-# PAN firewall Interfaces
-managemet_interface_ip = '10.5.0.4'
-public_interface_ip = '10.5.1.4'
-owncloud_interface_ip = '10.5.2.4'
-desktop_interface_ip = '10.5.3.4'
-
-
-# Servers
-owncloud_server_static_internal_ip = '10.5.2.5'
-
-
-# Desktop interfaces configuration
-desktop_static_primary_internal_ip = '10.5.3.5' # desktop_network
-desktop_static_secondary_internal_ip = '10.5.1.5' # public network
+untrust_route = "untrust-route" + randnum
+trust_route = "trust-route" + randnum
 
 
 # Subnets
-mgmt_subnet_ip = '10.5.0.0/24'
-owncloud_subnet_ip = '10.5.2.0/24'
-public_subnet_ip = '10.5.1.0/24'
-desktop_subnet_ip = '10.5.3.0/24'
+mgmt_subnet_ip = '10.5.1.0/24'
+public_subnet_ip = '10.5.0.0/24'
+untrust_subnet_ip = '172.16.1.0/24'
+trust_subnet_ip = '192.168.11.0/24'
+
+# VM-Series firewall Interfaces
+vmseries_mgmt_interface_ip = '10.5.1.99'
+vmseries_untrust_interface_ip = '172.16.1.99'
+vmseries_trust_interface_ip = '192.168.11.99'
+
+
+# Guacamole interfaces configuration (Mgmt and Public Network)
+guac_mgmt_ip = '10.5.1.5'  # mgmt_network
+guac_public_ip = '10.5.0.5'  # public_network
+
+# Desktop interfaces configuration (mgmt and trust Network)
+desktop_mgmt_ip = '10.5.1.10'
+desktop_trust_ip = '192.168.11.100'
+
+# Owncloud interfaces configuration (untrust Network)
+owncloud_untrust_ip = '172.16.1.100'
 
 
 COMPUTE_URL_BASE = 'https://www.googleapis.com/compute/v1/'
@@ -91,7 +89,7 @@ def GenerateConfig(context):
     outputs = []
     resources = [
         {
-            'name': ngfw_instance,
+            'name': vmseries_ngfw_instance,
             'type': 'compute.v1.instance',
             'properties': {
                 'zone': zone,
@@ -105,7 +103,7 @@ def GenerateConfig(context):
                     'boot': True,
                     'autoDelete': True,
                     'initializeParams': {
-                        'sourceImage': ''.join([COMPUTE_URL_BASE, pan_ngfw_image])
+                        'sourceImage': ''.join([COMPUTE_URL_BASE, vmseries_ngfw_image])
                     }
                 }],
                 'metadata': {
@@ -129,26 +127,17 @@ def GenerateConfig(context):
                             'type': 'ONE_TO_ONE_NAT'
                         }],
                         'subnetwork': '$(ref.' + mgmt_subnet + '.selfLink)',
-                        'networkIP': managemet_interface_ip,
+                        'networkIP': vmseries_mgmt_interface_ip,
                     },
                     {
-                        'network': '$(ref.' + public_network + '.selfLink)',
-                        'accessConfigs': [{
-                            'name': 'External access',
-                            'type': 'ONE_TO_ONE_NAT'
-                        }],
-                        'subnetwork': '$(ref.' + public_subnet + '.selfLink)',
-                        'networkIP': public_interface_ip,
+                        'network': '$(ref.' + untrust_network + '.selfLink)',
+                        'subnetwork': '$(ref.' + untrust_subnet + '.selfLink)',
+                        'networkIP': vmseries_untrust_interface_ip,
                     },
                     {
-                        'network': '$(ref.' + owncloud_network + '.selfLink)',
-                        'subnetwork': '$(ref.' + owncloud_subnet + '.selfLink)',
-                        'networkIP': owncloud_interface_ip,
-                    },
-                    {
-                        'network': '$(ref.' + desktop_network + '.selfLink)',
-                        'subnetwork': '$(ref.' + desktop_subnet + '.selfLink)',
-                        'networkIP': desktop_interface_ip,
+                        'network': '$(ref.' + trust_network + '.selfLink)',
+                        'subnetwork': '$(ref.' + trust_subnet + '.selfLink)',
+                        'networkIP': vmseries_trust_interface_ip,
                     }
                 ]
             }
@@ -171,7 +160,7 @@ def GenerateConfig(context):
                     }
                 }],
                 'metadata': {
-                    'dependsOn': [ngfw_instance],
+                    'dependsOn': [vmseries_ngfw_instance],
                     'items': []
                 },
                 'serviceAccounts': [{
@@ -185,14 +174,14 @@ def GenerateConfig(context):
                     ]}
                 ],
                 'networkInterfaces': [{
-                    'network': '$(ref.' + desktop_network + '.selfLink)',
-                    'subnetwork': '$(ref.' + desktop_subnet + '.selfLink)',
-                    'networkIP': desktop_static_primary_internal_ip
+                    'network': '$(ref.' + trust_network + '.selfLink)',
+                    'subnetwork': '$(ref.' + trust_subnet + '.selfLink)',
+                    'networkIP': desktop_trust_ip
                     },
                     {
-                    'network': '$(ref.' + public_network + '.selfLink)',
-                    'subnetwork': '$(ref.' + public_subnet + '.selfLink)',
-                    'networkIP': desktop_static_secondary_internal_ip
+                    'network': '$(ref.' + mgmt_network + '.selfLink)',
+                    'subnetwork': '$(ref.' + mgmt_subnet + '.selfLink)',
+                    'networkIP': desktop_mgmt_ip
                 }]
             }
         },
@@ -214,11 +203,11 @@ def GenerateConfig(context):
                     }
                 }],
                 'metadata': {
-                    'dependsOn': [ngfw_instance, windows_instance],
+                    'dependsOn': [vmseries_ngfw_instance, windows_instance],
                     'items': [{
                         'key': 'startup-script',
                         'value': "".join(["#!/bin/bash\n",
-                                          "sudo sed -i 's/34.82.191.82/10.5.2.5/g' /var/www/owncloud/config/config.php\n"
+                                          "sudo sed -i 's/34.82.191.82/192.168.11.100/g' /var/www/owncloud/config/config.php\n"
                                           ])},
                         {'key': 'ssh-keys', 'value': sshkey},
                         {'key': 'serial-port-enable', 'value': '1'}]
@@ -234,9 +223,9 @@ def GenerateConfig(context):
                     ]}
                 ],
                 'networkInterfaces': [{
-                    'network': '$(ref.' + owncloud_network + '.selfLink)',
-                    'subnetwork': '$(ref.' + owncloud_subnet + '.selfLink)',
-                    'networkIP': owncloud_server_static_internal_ip
+                    'network': '$(ref.' + untrust_network + '.selfLink)',
+                    'subnetwork': '$(ref.' + untrust_subnet + '.selfLink)',
+                    'networkIP': owncloud_untrust_ip
                 }]
             }
         },
@@ -258,11 +247,11 @@ def GenerateConfig(context):
                     }
                 }],
                 'metadata': {
-                    'dependsOn': [ngfw_instance, windows_instance],
+                    'dependsOn': [vmseries_ngfw_instance, windows_instance],
                     'items': [{
                         'key': 'startup-script',
                         'value': "".join(["#!/bin/bash\n",
-                                          "sudo sed -i 's/34.82.191.82/10.5.2.5/g' /var/www/owncloud/config/config.php\n"
+                                          "echo 'startup-script'\n"
                                           ])},
                         {'key': 'ssh-keys', 'value': sshkey},
                         {'key': 'serial-port-enable', 'value': '1'}]
@@ -280,27 +269,18 @@ def GenerateConfig(context):
                 'networkInterfaces': [{
                         'network': '$(ref.' + public_network + '.selfLink)',
                         'accessConfigs': [{
-                            'name': 'External access',
+                            'name': 'MGMT Access',
                             'type': 'ONE_TO_ONE_NAT'
                         }],
                         'subnetwork': '$(ref.' + public_subnet + '.selfLink)',
-                    }]
-            }
-        },
-        {
-            'name': owncloud_network,
-            'type': 'compute.v1.network',
-            'properties': {
-                'autoCreateSubnetworks': False,
-            }
-        },
-        {
-            'name': owncloud_subnet,
-            'type': 'compute.v1.subnetwork',
-            'properties': {
-                'ipCidrRange': owncloud_subnet_ip,
-                'region': region,
-                'network': '$(ref.' + owncloud_network + '.selfLink)',
+                        'networkIP': guac_public_ip,
+                    },
+                    {
+                    'network': '$(ref.' + mgmt_network + '.selfLink)',
+                    'subnetwork': '$(ref.' + mgmt_subnet + '.selfLink)',
+                    'networkIP': guac_mgmt_ip
+                    }
+                    ]
             }
         },
         {
@@ -337,7 +317,7 @@ def GenerateConfig(context):
         },
 
         {
-            'name': desktop_network,
+            'name': trust_network,
             'type': 'compute.v1.network',
             'properties': {
                 'autoCreateSubnetworks': False,
@@ -345,17 +325,34 @@ def GenerateConfig(context):
             }
         },
         {
-            'name': desktop_subnet,
+            'name': trust_subnet,
             'type': 'compute.v1.subnetwork',
             'properties': {
-                'ipCidrRange': desktop_subnet_ip,
+                'ipCidrRange': trust_subnet_ip,
                 'region': region,
-                'network': '$(ref.' + desktop_network + '.selfLink)',
+                'network': '$(ref.' + trust_network + '.selfLink)',
             }
         },
         {
+            'name': untrust_network,
+            'type': 'compute.v1.network',
+            'properties': {
+                'autoCreateSubnetworks': False,
+            }
+        },
+        {
+            'name': untrust_subnet,
+            'type': 'compute.v1.subnetwork',
+            'properties': {
+                'ipCidrRange': untrust_subnet_ip,
+                'region': region,
+                'network': '$(ref.' + untrust_network + '.selfLink)',
+            }
+        },
+
+        {
             'metadata': {
-                'dependsOn': [mgmt_network, desktop_network, owncloud_network, public_network]
+                'dependsOn': [mgmt_network, public_network, trust_network, untrust_network]
             },
             'name': mgmt_firewall,
             'type': 'compute.v1.firewall',
@@ -367,13 +364,13 @@ def GenerateConfig(context):
                 'sourceRanges': ['0.0.0.0/0'],
                 'allowed': [{
                     'IPProtocol': 'tcp',
-                    'ports': [22, 443]
+                    'ports': [22, 443, 8080, 3389]
                 }]
             }
         },
         {
             'metadata': {
-                'dependsOn': [mgmt_network, desktop_network, owncloud_network, public_network]
+                'dependsOn': [mgmt_network, public_network, trust_network, untrust_network]
             },
             'name': public_firewall,
             'type': 'compute.v1.firewall',
@@ -385,19 +382,19 @@ def GenerateConfig(context):
                 'sourceRanges': ['0.0.0.0/0'],
                 'allowed': [{
                     'IPProtocol': 'tcp',
-                    'ports': [221, 3389, 8080]
+                    'ports': [22, 443, 8080, 3389]
                 }]
             }
         },
         {
             'metadata': {
-                'dependsOn': [mgmt_network, desktop_network, owncloud_network, public_network]
+                'dependsOn': [mgmt_network, public_network, trust_network, untrust_network]
             },
-            'name': owncloud_firewall,
+            'name': untrust_firewall,
             'type': 'compute.v1.firewall',
             'properties': {
                 'region': region,
-                'network': '$(ref.' + owncloud_network + '.selfLink)',
+                'network': '$(ref.' + untrust_network + '.selfLink)',
                 'direction': 'INGRESS',
                 'priority': 1000,
                 'sourceRanges': ['0.0.0.0/0'],
@@ -412,13 +409,13 @@ def GenerateConfig(context):
         },
         {
             'metadata': {
-                'dependsOn': [mgmt_network, desktop_network, owncloud_network, public_network]
+                'dependsOn': [mgmt_network, public_network, trust_network, untrust_network]
             },
-            'name': desktop_firewall,
+            'name': trust_firewall,
             'type': 'compute.v1.firewall',
             'properties': {
                 'region': region,
-                'network': '$(ref.' + desktop_network + '.selfLink)',
+                'network': '$(ref.' + trust_network + '.selfLink)',
                 'direction': 'INGRESS',
                 'priority': 1000,
                 'sourceRanges': ['0.0.0.0/0'],
@@ -431,39 +428,39 @@ def GenerateConfig(context):
                 }]
             }
         },
+
         {
             'metadata': {
-                'dependsOn': [mgmt_network, desktop_network, owncloud_network, public_network]
+                'dependsOn': [mgmt_network, public_network, trust_network, untrust_network]
             },
-            'name': owncloud_route,
+            'name': untrust_route,
             'type': 'compute.v1.route',
             'properties': {
                 'priority': 100,
-                'network': '$(ref.' + owncloud_network + '.selfLink)',
+                'network': '$(ref.' + untrust_network + '.selfLink)',
                 'destRange': '0.0.0.0/0',
-                'nextHopIp': '$(ref.' + ngfw_instance + '.networkInterfaces[2].networkIP)'
+                'nextHopIp': '$(ref.' + vmseries_ngfw_instance + '.networkInterfaces[1].networkIP)'
             }
         },
         {
             'metadata': {
-                'dependsOn': [mgmt_network, desktop_network, owncloud_network, public_network]
+                'dependsOn': [mgmt_network, public_network, trust_network, untrust_network]
             },
-            'name': desktop_route,
+            'name': trust_route,
             'type': 'compute.v1.route',
             'properties': {
                 'priority': 100,
-                'network': '$(ref.' + desktop_network + '.selfLink)',
+                'network': '$(ref.' + trust_network + '.selfLink)',
                 'destRange': '0.0.0.0/0',
-                'nextHopIp': '$(ref.' + ngfw_instance + '.networkInterfaces[3].networkIP)'
+                'nextHopIp': '$(ref.' + vmseries_ngfw_instance + '.networkInterfaces[2].networkIP)'
             }
         }
 
     ]
     outputs.append({'name': 'Guacamole-PublicIP-Address',
                     'value': 'http://' + '$(ref.' + guacamole_instance + '.networkInterfaces[0].accessConfigs[0].natIP)' + ':8080/guacamole'})
-    outputs.append({'name': 'PANFirewall-PublicIP-Address',
-                    'value': '$(ref.' + ngfw_instance + '.networkInterfaces[0].accessConfigs[0].natIP)'})
+    outputs.append({'name': 'PANFirewall-Internal-IP-Address',
+                    'value': '$(ref.' + vmseries_ngfw_instance + '.networkInterfaces[0].networkIP)'})
     outputs.append({'name': 'OwnCloud-Internal-IP-Address',
                     'value': 'http://' + '$(ref.' + owncloud_instance + '.networkInterfaces[0].networkIP)'})
-
     return {'resources': resources, 'outputs': outputs}
